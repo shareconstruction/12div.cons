@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>부서 공유 오피스</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    
+    <style>
+        /* [필독] 아이폰 Safari 전용 스타일 보정 */
+        input, button { -webkit-appearance: none; appearance: none; border-radius: 12px; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        
+        body { margin: 0; background-color: #f1f5f9; font-family: -apple-system, sans-serif; -webkit-text-size-adjust: none; }
+
+        /* 페이지 전환 강제 실행 로직 */
+        .page { display: none !important; opacity: 0; pointer-events: none; }
+        .page.active { display: block !important; opacity: 1; pointer-events: auto; transition: opacity 0.2s; }
+        #page-login.active { display: flex !important; }
+
+        .btn-active:active { opacity: 0.6; transform: scale(0.96); }
+        #calendar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+    <div id="page-login" class="page active flex-col items-center justify-center min-h-screen p-6">
+        <div class="bg-white p-8 rounded-[30px] shadow-2xl w-full max-w-sm border border-gray-100">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-black text-blue-700">📂 공유 오피스</h1>
+                <p class="text-gray-400 mt-2 font-bold text-sm">아이폰 접속 중...</p>
+            </div>
+            <div class="space-y-3">
+                <input type="text" id="user-name" placeholder="성명" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-[16px]">
+                <input type="password" id="user-pw" placeholder="비밀번호" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-[16px]">
+            </div>
+            <button type="button" onclick="handleAuth()" ontouchstart="" class="btn-active w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-lg mt-8">로그인</button>
+        </div>
+    </div>
+
+    <nav id="main-nav" class="hidden bg-blue-700 text-white sticky top-0 z-50 shadow-md">
+        <div class="flex justify-around p-3">
+            <button onclick="showPage('page-calendar')" ontouchstart="" class="btn-active flex flex-col items-center">
+                <span class="text-xl">📅</span><span class="text-[10px] font-bold mt-1">캘린더</span>
+            </button>
+            <button onclick="showPage('page-list')" ontouchstart="" class="btn-active flex flex-col items-center">
+                <span class="text-xl">🏗️</span><span class="text-[10px] font-bold mt-1">공사목록</span>
+            </button>
+        </div>
+    </nav>
+
+    <div id="page-calendar" class="page p-4">
+        <h2 class="text-xl font-black text-gray-800 mb-4 px-2">🗓️ 부서 일정</h2>
+        <div id="calendar"></div>
+    </div>
+
+    <div id="page-list" class="page p-4">
+        <div class="flex justify-between items-center mb-6 px-2">
+            <h2 class="text-xl font-black text-gray-800 tracking-tight">🏗️ 시설공사 현황</h2>
+            <button onclick="addProjectPrompt()" class="btn-active bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-xs">+ 추가</button>
+        </div>
+        <div id="project-card-container" class="space-y-4 pb-10"></div>
+    </div>
+
+    <script>
+        let calendar;
+        let projects = [
+            { id: 1, title: '본청 외벽 도색', company: '대한건설', period: '03.01~03.15', date: '2026-03-10', fileList: ['시공계획서.pdf'] }
+        ];
+
+        // [아이폰 해결 핵심] 페이지 전환 함수
+        function showPage(pageId) {
+            console.log("전환 시도:", pageId);
+            
+            // 1. 모든 페이지 즉시 숨김 (!important 강제 적용 스타일 활용)
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(p => {
+                p.classList.remove('active');
+                p.style.setProperty('display', 'none', 'important');
+            });
+
+            // 2. 상단 네비게이션 제어
+            const nav = document.getElementById('main-nav');
+            if (pageId === 'page-login') nav.classList.add('hidden');
+            else nav.classList.remove('hidden');
+
+            // 3. 아이폰 Safari의 렌더링 엔진을 깨우기 위해 10ms 지연 후 표시
+            setTimeout(() => {
+                const target = document.getElementById(pageId);
+                if (target) {
+                    target.style.setProperty('display', (pageId === 'page-login' ? 'flex' : 'block'), 'important');
+                    target.classList.add('active');
+                    
+                    if (pageId === 'page-calendar' && calendar) {
+                        calendar.render();
+                        calendar.updateSize();
+                    } else if (pageId === 'page-list') {
+                        renderList();
+                    }
+                }
+            }, 10);
+            
+            window.scrollTo(0, 0);
+        }
+
+        function handleAuth() {
+            const name = document.getElementById('user-name').value;
+            const pw = document.getElementById('user-pw').value;
+            
+            if (!name || !pw) {
+                alert("입력 정보를 확인하세요.");
+                return;
+            }
+
+            // 로그인 성공 시 강제 화면 전환 실행
+            showPage('page-calendar');
+        }
+
+        window.addEventListener('load', function() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth', locale: 'ko',
+                headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+                events: projects.map(p => ({ title: p.title, start: p.date })),
+                height: 'auto'
+            });
+            calendar.render();
+        });
+
+        function renderList() {
+            const container = document.getElementById('project-card-container');
+            container.innerHTML = projects.map(p => `
+                <div class="bg-white rounded-[25px] p-5 shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start gap-2 mb-4">
+                        <div class="flex-1 overflow-hidden">
+                            <h3 class="text-[17px] font-black text-gray-900 truncate mb-1">${p.title}</h3>
+                            <div class="flex items-center gap-2 text-[12px] text-gray-400 font-bold">
+                                <span class="truncate">${p.company}</span>
+                                <span class="text-gray-200">|</span>
+                                <span class="text-blue-500 shrink-0">${p.period}</span>
+                            </div>
+                        </div>
+                        <button onclick="uploadFile(${p.id})" ontouchstart="" class="btn-active shrink-0 bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl text-xs font-black border border-blue-100">
+                            ⬆️ 업로드
+                        </button>
+                    </div>
+                    <div class="pt-4 border-t border-dashed border-gray-100">
+                        <p class="text-[10px] font-black text-gray-300 tracking-wider mb-1 uppercase">Attached Files</p>
+                        ${p.fileList.map(f => `<div class="bg-gray-50 text-gray-700 p-3 rounded-xl mt-1 text-[13px] font-bold border border-gray-100">📄 ${f}</div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function uploadFile(id) {
+            const proj = projects.find(p => p.id === id);
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.onchange = e => {
+                if (e.target.files[0]) {
+                    proj.fileList.push(e.target.files[0].name);
+                    renderList();
+                }
+            };
+            input.click();
+        }
+
+        function addProjectPrompt() {
+            const title = prompt("공사 명칭:");
+            if (title) {
+                projects.unshift({ id: Date.now(), title, company: '신규업체', period: '기간설정', date: '2026-03-10', fileList: [] });
+                renderList();
+            }
+        }
+    </script>
+</body>
+</html>
