@@ -3,176 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>부서 공유 오피스</title>
+    <title>을지시설 오피스</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     
     <style>
-        /* [필독] 아이폰 Safari 전용 스타일 보정 */
         input, button { -webkit-appearance: none; appearance: none; border-radius: 12px; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { margin: 0; background-color: #f8fafc; font-family: -apple-system, sans-serif; }
+
+        .page { display: none !important; opacity: 0; }
+        .page.active { display: block !important; opacity: 1; transition: opacity 0.2s; }
+        #page-login.active, #page-signup.active { display: flex !important; }
+
+        .btn-active:active { opacity: 0.6; transform: scale(0.97); }
         
-        body { margin: 0; background-color: #f1f5f9; font-family: -apple-system, sans-serif; -webkit-text-size-adjust: none; }
-
-        /* 페이지 전환 강제 실행 로직 */
-        .page { display: none !important; opacity: 0; pointer-events: none; }
-        .page.active { display: block !important; opacity: 1; pointer-events: auto; transition: opacity 0.2s; }
-        #page-login.active { display: flex !important; }
-
-        .btn-active:active { opacity: 0.6; transform: scale(0.96); }
-        #calendar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        /* 캘린더 커스텀 */
+        #calendar { background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .list-view-item { border-left: 4px solid #3b82f6; }
     </style>
 </head>
 <body>
 
     <div id="page-login" class="page active flex-col items-center justify-center min-h-screen p-6">
-        <div class="bg-white p-8 rounded-[30px] shadow-2xl w-full max-w-sm border border-gray-100">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-black text-blue-700">📂 공유 오피스</h1>
-                <p class="text-gray-400 mt-2 font-bold text-sm">아이폰 접속 중...</p>
+        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-sm border border-gray-100 text-center">
+            <div class="mb-6">
+                <div class="text-5xl mb-2">👷‍♂️</div>
+                <h1 class="text-2xl font-black text-blue-800 tracking-tighter">을지시설 오피스</h1>
+                <p class="text-gray-400 text-xs mt-1 font-bold uppercase">Engineering & Facility Management</p>
             </div>
+            
+            <div class="space-y-3 text-left">
+                <input type="text" id="login-name" placeholder="성명" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[16px]">
+                <input type="password" id="login-pw" placeholder="비밀번호" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[16px]">
+            </div>
+
+            <button onclick="handleLogin()" class="btn-active w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-lg mt-6">로그인</button>
+            <button onclick="changePage('page-signup')" class="mt-4 text-blue-500 text-sm font-bold">회원가입(사용자 등록)</button>
+        </div>
+    </div>
+
+    <div id="page-signup" class="page flex-col items-center justify-center min-h-screen p-6">
+        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-sm border border-gray-100">
+            <h2 class="text-xl font-black text-gray-800 mb-6 text-center">신규 사용자 등록</h2>
             <div class="space-y-3">
-                <input type="text" id="user-name" placeholder="성명" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-[16px]">
-                <input type="password" id="user-pw" placeholder="비밀번호" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-[16px]">
+                <input type="text" id="reg-name" placeholder="성명" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[16px]">
+                <input type="text" id="reg-company" placeholder="회사명(소속)" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[16px]">
+                <input type="password" id="reg-pw" placeholder="비밀번호 설정" class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[16px]">
             </div>
-            <button type="button" onclick="handleAuth()" ontouchstart="" class="btn-active w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-lg mt-8">로그인</button>
+            <button onclick="handleSignup()" class="btn-active w-full bg-green-600 text-white py-5 rounded-2xl font-black text-lg shadow-lg mt-6">등록 완료</button>
+            <button onclick="changePage('page-login')" class="w-full mt-4 text-gray-400 text-sm font-bold">취소</button>
         </div>
     </div>
 
     <nav id="main-nav" class="hidden bg-blue-700 text-white sticky top-0 z-50 shadow-md">
         <div class="flex justify-around p-3">
-            <button onclick="showPage('page-calendar')" ontouchstart="" class="btn-active flex flex-col items-center">
-                <span class="text-xl">📅</span><span class="text-[10px] font-bold mt-1">캘린더</span>
+            <button onclick="changePage('page-calendar')" class="btn-active flex flex-col items-center">
+                <span class="text-xl">📅</span><span class="text-[10px] font-bold">캘린더</span>
             </button>
-            <button onclick="showPage('page-list')" ontouchstart="" class="btn-active flex flex-col items-center">
-                <span class="text-xl">🏗️</span><span class="text-[10px] font-bold mt-1">공사목록</span>
+            <button onclick="changePage('page-list')" class="btn-active flex flex-col items-center">
+                <span class="text-xl">🏗️</span><span class="text-[10px] font-bold">공사목록</span>
             </button>
         </div>
     </nav>
 
-    <div id="page-calendar" class="page p-4">
-        <h2 class="text-xl font-black text-gray-800 mb-4 px-2">🗓️ 부서 일정</h2>
-        <div id="calendar"></div>
+    <div id="page-calendar" class="page p-4 pb-20">
+        <div class="flex justify-between items-center mb-4 px-2">
+            <h2 class="text-xl font-black text-gray-800">시설 공사 일정</h2>
+            <button onclick="toggleCalendarMode()" class="bg-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-600">보기 방식 전환</button>
+        </div>
+        
+        <div id="calendar-grid-view">
+            <div id="calendar"></div>
+        </div>
+
+        <div id="calendar-list-view" class="hidden space-y-3">
+            </div>
     </div>
 
-    <div id="page-list" class="page p-4">
+    <div id="page-list" class="page p-4 pb-20">
         <div class="flex justify-between items-center mb-6 px-2">
-            <h2 class="text-xl font-black text-gray-800 tracking-tight">🏗️ 시설공사 현황</h2>
-            <button onclick="addProjectPrompt()" class="btn-active bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-xs">+ 추가</button>
+            <h2 class="text-xl font-black text-gray-800">공사 상세 정보</h2>
+            <button onclick="addNewProject()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">+ 추가</button>
         </div>
-        <div id="project-card-container" class="space-y-4 pb-10"></div>
+        <div id="project-cards" class="space-y-6">
+            </div>
     </div>
 
     <script>
         let calendar;
+        let isGridView = true;
+        let userData = { name: "admin", pw: "1234" }; // 초기값
         let projects = [
-            { id: 1, title: '본청 외벽 도색', company: '대한건설', period: '03.01~03.15', date: '2026-03-10', fileList: ['시공계획서.pdf'] }
+            { id: 1, title: "본청 외벽 보수공사", company: "을지건설", period: "2026-03-01 ~ 2026-03-15", cost: "55,000,000", date: "2026-03-12", files: ["공사계획서.pdf"] }
         ];
 
-        // [아이폰 해결 핵심] 페이지 전환 함수
-        function showPage(pageId) {
-            console.log("전환 시도:", pageId);
-            
-            // 1. 모든 페이지 즉시 숨김 (!important 강제 적용 스타일 활용)
-            const pages = document.querySelectorAll('.page');
-            pages.forEach(p => {
-                p.classList.remove('active');
+        function changePage(pageId) {
+            document.querySelectorAll('.page').forEach(p => {
                 p.style.setProperty('display', 'none', 'important');
+                p.classList.remove('active');
             });
-
-            // 2. 상단 네비게이션 제어
             const nav = document.getElementById('main-nav');
-            if (pageId === 'page-login') nav.classList.add('hidden');
-            else nav.classList.remove('hidden');
+            nav.classList.toggle('hidden', pageId === 'page-login' || pageId === 'page-signup');
 
-            // 3. 아이폰 Safari의 렌더링 엔진을 깨우기 위해 10ms 지연 후 표시
             setTimeout(() => {
                 const target = document.getElementById(pageId);
-                if (target) {
-                    target.style.setProperty('display', (pageId === 'page-login' ? 'flex' : 'block'), 'important');
-                    target.classList.add('active');
-                    
-                    if (pageId === 'page-calendar' && calendar) {
-                        calendar.render();
-                        calendar.updateSize();
-                    } else if (pageId === 'page-list') {
-                        renderList();
-                    }
-                }
-            }, 10);
-            
-            window.scrollTo(0, 0);
+                target.style.setProperty('display', (pageId.includes('login') || pageId.includes('signup') ? 'flex' : 'block'), 'important');
+                target.classList.add('active');
+                if (pageId === 'page-calendar') renderCalendar();
+                if (pageId === 'page-list') renderProjectCards();
+            }, 50);
         }
 
-        function handleAuth() {
-            const name = document.getElementById('user-name').value;
-            const pw = document.getElementById('user-pw').value;
-            
-            if (!name || !pw) {
-                alert("입력 정보를 확인하세요.");
-                return;
-            }
-
-            // 로그인 성공 시 강제 화면 전환 실행
-            showPage('page-calendar');
+        // 1 & 2. 사용자 등록 및 로그인
+        function handleSignup() {
+            const n = document.getElementById('reg-name').value;
+            const p = document.getElementById('reg-pw').value;
+            if(!n || !p) return alert("필수 정보를 입력하세요.");
+            userData = { name: n, pw: p };
+            alert("등록이 완료되었습니다. 로그인 해주세요.");
+            changePage('page-login');
         }
 
-        window.addEventListener('load', function() {
+        function handleLogin() {
+            const n = document.getElementById('login-name').value;
+            const p = document.getElementById('login-pw').value;
+            if(n === userData.name && p === userData.pw) changePage('page-calendar');
+            else alert("정보가 일치하지 않습니다.");
+        }
+
+        // 3. 캘린더 전환 모드
+        function toggleCalendarMode() {
+            isGridView = !isGridView;
+            document.getElementById('calendar-grid-view').classList.toggle('hidden');
+            document.getElementById('calendar-list-view').classList.toggle('hidden');
+            if(!isGridView) renderListView();
+        }
+
+        function renderCalendar() {
             const calendarEl = document.getElementById('calendar');
-            calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth', locale: 'ko',
-                headerToolbar: { left: 'prev', center: 'title', right: 'next' },
-                events: projects.map(p => ({ title: p.title, start: p.date })),
-                height: 'auto'
-            });
+            if(!calendar) {
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth', locale: 'ko',
+                    events: projects.map(p => ({ title: p.title, start: p.date, id: String(p.id) })),
+                    eventClick: function(info) { goToProject(info.event.id); },
+                    height: 'auto'
+                });
+            }
             calendar.render();
-        });
+        }
 
-        function renderList() {
-            const container = document.getElementById('project-card-container');
+        function renderListView() {
+            const listEl = document.getElementById('calendar-list-view');
+            listEl.innerHTML = projects.sort((a,b) => new Date(a.date) - new Date(b.date)).map(p => `
+                <div onclick="goToProject(${p.id})" class="list-view-item bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center btn-active">
+                    <div>
+                        <div class="text-xs font-bold text-blue-500">${p.date}</div>
+                        <div class="text-sm font-black text-gray-800">${p.title}</div>
+                    </div>
+                    <div class="text-gray-300">▶</div>
+                </div>
+            `).join('');
+        }
+
+        // 4. 공사 클릭 시 상세 페이지 이동
+        function goToProject(id) {
+            changePage('page-list');
+            setTimeout(() => {
+                const targetCard = document.getElementById(`card-${id}`);
+                if(targetCard) targetCard.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+
+        // 5. 상세 카드 렌더링 (클릭 시 기입 가능)
+        function renderProjectCards() {
+            const container = document.getElementById('project-cards');
             container.innerHTML = projects.map(p => `
-                <div class="bg-white rounded-[25px] p-5 shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-start gap-2 mb-4">
-                        <div class="flex-1 overflow-hidden">
-                            <h3 class="text-[17px] font-black text-gray-900 truncate mb-1">${p.title}</h3>
-                            <div class="flex items-center gap-2 text-[12px] text-gray-400 font-bold">
-                                <span class="truncate">${p.company}</span>
-                                <span class="text-gray-200">|</span>
-                                <span class="text-blue-500 shrink-0">${p.period}</span>
+                <div id="card-${p.id}" class="bg-white rounded-[28px] p-6 shadow-lg border border-gray-100">
+                    <div class="space-y-4">
+                        <div class="border-b pb-2">
+                            <label class="text-[10px] text-gray-400 font-bold uppercase">공사명</label>
+                            <div contenteditable="true" onblur="updateData(${p.id}, 'title', this.innerText)" class="text-lg font-black text-gray-800 focus:text-blue-600 outline-none">${p.title}</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase">시공업체</label>
+                                <div contenteditable="true" onblur="updateData(${p.id}, 'company', this.innerText)" class="text-sm font-bold text-gray-700 outline-none">${p.company}</div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold uppercase">금액(원)</label>
+                                <div contenteditable="true" onblur="updateData(${p.id}, 'cost', this.innerText)" class="text-sm font-bold text-blue-600 outline-none">${p.cost}</div>
                             </div>
                         </div>
-                        <button onclick="uploadFile(${p.id})" ontouchstart="" class="btn-active shrink-0 bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl text-xs font-black border border-blue-100">
-                            ⬆️ 업로드
-                        </button>
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-bold uppercase">공사기간</label>
+                            <div contenteditable="true" onblur="updateData(${p.id}, 'period', this.innerText)" class="text-sm font-bold text-gray-700 outline-none">${p.period}</div>
+                        </div>
                     </div>
-                    <div class="pt-4 border-t border-dashed border-gray-100">
-                        <p class="text-[10px] font-black text-gray-300 tracking-wider mb-1 uppercase">Attached Files</p>
-                        ${p.fileList.map(f => `<div class="bg-gray-50 text-gray-700 p-3 rounded-xl mt-1 text-[13px] font-bold border border-gray-100">📄 ${f}</div>`).join('')}
+                    <div class="mt-6 pt-4 border-t border-dashed">
+                        <label class="text-[10px] text-gray-400 font-bold uppercase">첨부 자료 (다운로드)</label>
+                        <div class="mt-2 space-y-2">
+                            ${p.files.map(f => `
+                                <div onclick="downloadSim('${f}')" class="bg-blue-50 p-3 rounded-xl text-xs font-bold text-blue-700 flex justify-between btn-active">
+                                    <span>📄 ${f}</span>
+                                    <span>💾</span>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        function uploadFile(id) {
+        function updateData(id, field, value) {
             const proj = projects.find(p => p.id === id);
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.onchange = e => {
-                if (e.target.files[0]) {
-                    proj.fileList.push(e.target.files[0].name);
-                    renderList();
-                }
-            };
-            input.click();
+            if(proj) proj[field] = value;
         }
 
-        function addProjectPrompt() {
-            const title = prompt("공사 명칭:");
-            if (title) {
-                projects.unshift({ id: Date.now(), title, company: '신규업체', period: '기간설정', date: '2026-03-10', fileList: [] });
-                renderList();
-            }
+        function downloadSim(filename) {
+            alert(filename + " 파일을 단말기로 다운로드합니다.");
+            // 실제 다운로드는 서버 경로가 필요하므로 여기서는 시뮬레이션 알림만 표시합니다.
+        }
+
+        function addNewProject() {
+            const newId = projects.length + 1;
+            projects.unshift({ id: newId, title: "신규 공사명", company: "업체 기입", period: "기간 기입", cost: "0", date: "2026-03-12", files: [] });
+            renderProjectCards();
         }
     </script>
 </body>
